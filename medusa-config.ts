@@ -19,6 +19,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/review",
     },
     {
+      resolve: "./src/modules/wishlist",
+    },
+    {
       resolve: "./src/modules/verification",
     },
     {
