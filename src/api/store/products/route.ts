@@ -12,6 +12,9 @@ import { wrapVariantsWithInventoryQuantityForSalesChannel } from "@medusajs/medu
 import { RequestWithContext, wrapProductsWithTaxPrices } from "@medusajs/medusa/api/store/products/helpers"
 import { WISHLIST_MODULE } from "../../../modules/wishlist"
 import type WishlistModuleService from "../../../modules/wishlist/service"
+import { REVIEW_MODULE } from "../../../modules/review"
+import type ReviewModuleService from "../../../modules/review/service"
+import { getPool } from "../../../lib/pg"
 
 export const GET = async (
   req: RequestWithContext<HttpTypes.StoreProductListParams>,
@@ -81,6 +84,7 @@ async function getProductsWithIndexEngine(
 
   await wrapProductsWithTaxPrices(req, products)
   await annotateProductsWithWishlist(req, products)
+  await annotateProductsWithReviews(req, products)
   res.json({
     products,
     count: metadata!.estimate_count,
@@ -133,6 +137,7 @@ async function getProducts(
 
   await wrapProductsWithTaxPrices(req, products)
   await annotateProductsWithWishlist(req, products)
+  await annotateProductsWithReviews(req, products)
   res.json({
     products,
     count: metadata.count,
@@ -165,6 +170,63 @@ async function annotateProductsWithWishlist(
     // Fail-safe: never block product listing due to wishlist
     for (const p of products ?? []) {
       ;(p as any).is_wishlist = false
+    }
+  }
+}
+
+async function annotateProductsWithReviews(
+  req: RequestWithContext<HttpTypes.StoreProductListParams>,
+  products: any[]
+) {
+  try {
+    if (!Array.isArray(products) || products.length === 0) {
+      return
+    }
+
+    const ids = products.map((p) => (p as any).id).filter(Boolean)
+    if (ids.length === 0) {
+      return
+    }
+
+    // Use external Postgres pool to aggregate like the product details API
+    const pool = getPool()
+    const res = await pool.query(
+      `
+      SELECT
+        r.product_id,
+        COALESCE(AVG(r.rating)::numeric(10,2), 0) AS avg_rating,
+        COUNT(r.id) AS review_count
+      FROM review r
+      WHERE r.product_id = ANY($1)
+        AND (r.status IS NULL OR r.status = 'approved')
+      GROUP BY r.product_id
+      `,
+      [ids]
+    )
+
+    const map = new Map<string, { avg: number; count: number }>()
+    for (const row of res?.rows ?? []) {
+      const pid = String(row.product_id)
+      const avg = row.avg_rating != null ? Number(row.avg_rating) : 0
+      const count = row.review_count != null ? Number(row.review_count) : 0
+      map.set(pid, { avg, count })
+    }
+
+    for (const p of products) {
+      const pid = String((p as any).id)
+      const rec = map.get(pid) || { avg: 0, count: 0 }
+      const avg = Number.isFinite(rec.avg) ? rec.avg : 0
+      const count = Number.isFinite(rec.count) ? rec.count : 0
+      ;(p as any).review_count = count
+      // Keep 1-decimal for rating used by frontend components
+      ;(p as any).rating = Math.round(avg * 10) / 10
+      // Also attach detailed stats like the details endpoint
+    }
+  } catch (e) {
+    // Fail-safe defaults
+    for (const p of products ?? []) {
+      ;(p as any).review_count = 0
+      ;(p as any).rating = 0
     }
   }
 }

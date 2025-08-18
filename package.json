@@ -33,7 +33,7 @@
     "awilix": "^8.0.1",
     "cors": "^2.8.5",
     "nodemailer": "^6.9.15",
-    "pg": "^8.13.0"
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.8.8",

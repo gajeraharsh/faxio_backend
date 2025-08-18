@@ -6,6 +6,7 @@ import { ContainerRegistrationKeys, remoteQueryObjectFromString } from "@medusaj
 import { wrapVariantsWithInventoryQuantityForSalesChannel } from "@medusajs/medusa/api/utils/middlewares/index"
 import { wrapProductsWithTaxPrices } from "@medusajs/medusa/api/store/products/helpers"
 import { isPresent, Modules } from "@medusajs/framework/utils"
+import { getPool } from "../../../lib/pg"
 
 export const PostStoreWishlistSchema = z.object({
   product_id: z.string(),
@@ -108,6 +109,49 @@ export const GET = async (
   }
   if (isPresent((req as any).pricingContext?.currency_code)) {
     await wrapProductsWithTaxPrices(req as any, products)
+  }
+
+  // Annotate products with reviews (average rating and count)
+  try {
+    if (Array.isArray(products) && products.length) {
+      const ids = products.map((p: any) => p.id).filter(Boolean)
+      if (ids.length) {
+        const pool = getPool()
+        const r = await pool.query(
+          `
+          SELECT
+            r.product_id,
+            COALESCE(AVG(r.rating)::numeric(10,2), 0) AS avg_rating,
+            COUNT(r.id) AS review_count
+          FROM review r
+          WHERE r.product_id = ANY($1)
+            AND (r.status IS NULL OR r.status = 'approved')
+          GROUP BY r.product_id
+          `,
+          [ids]
+        )
+        const map = new Map<string, { avg: number; count: number }>()
+        for (const row of r?.rows ?? []) {
+          const pid = String(row.product_id)
+          const avg = row.avg_rating != null ? Number(row.avg_rating) : 0
+          const count = row.review_count != null ? Number(row.review_count) : 0
+          map.set(pid, { avg, count })
+        }
+        for (const p of products as any[]) {
+          const pid = String(p.id)
+          const rec = map.get(pid) || { avg: 0, count: 0 }
+          const avg = Number.isFinite(rec.avg) ? rec.avg : 0
+          const count = Number.isFinite(rec.count) ? rec.count : 0
+          p.review_count = count
+          p.rating = Math.round(avg * 10) / 10
+        }
+      }
+    }
+  } catch (e) {
+    for (const p of (products as any[]) ?? []) {
+      p.review_count = p.review_count ?? 0
+      p.rating = p.rating ?? 0
+    }
   }
 
   // Map product by id for quick lookup
