@@ -160,11 +160,23 @@ async function annotateProductsWithWishlist(
       return
     }
 
-    const wishlistService = req.scope.resolve<WishlistModuleService>(WISHLIST_MODULE)
-    const items = await wishlistService.listByCustomer(customerId)
-    const set = new Set((items || []).map((it: any) => it.product_id))
+    // Use a single SQL query to fetch wishlist product_ids for this customer
+    const ids = products.map((p) => (p as any).id).filter(Boolean)
+    if (ids.length === 0) {
+      for (const p of products ?? []) {
+        ;(p as any).is_wishlist = false
+      }
+      return
+    }
+
+    const pool = getPool()
+    const res = await pool.query(
+      `SELECT wi.product_id FROM wishlist_item wi WHERE wi.customer_id = $1 AND wi.product_id = ANY($2)`,
+      [customerId, ids]
+    )
+    const set = new Set((res?.rows || []).map((r: any) => String(r.product_id)))
     for (const p of products) {
-      ;(p as any).is_wishlist = set.has((p as any).id)
+      ;(p as any).is_wishlist = set.has(String((p as any).id))
     }
   } catch (e) {
     // Fail-safe: never block product listing due to wishlist
