@@ -34,7 +34,21 @@ module.exports = defineConfig({
           },
         ],
       },
-    }
+    },
+    {
+      resolve: "@medusajs/medusa/payment",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/cod",
+            id: "cod",
+            options: {
+              display_name: "Cash on Delivery",
+            },
+          },
+        ],
+      },
+    },
 
   ]
 })
