@@ -45,3 +45,10 @@ export async function sendOtpEmail(to: string, code: string) {
   const html = `<p>Your OTP code is <b>${code}</b>.</p><p>It expires in 10 minutes.</p>`
   await sendEmail({ to, subject, text, html })
 }
+
+export async function sendResetPasswordEmail(to: string, link: string) {
+  const subject = "Reset your password"
+  const text = `We received a request to reset your password. Click the link to proceed: ${link}. If you didn't request this, you can ignore this email.`
+  const html = `<p>We received a request to reset your password.</p><p><a href="${link}">Click here to reset your password</a></p><p>If you didn't request this, you can ignore this email.</p>`
+  await sendEmail({ to, subject, text, html })
+}
