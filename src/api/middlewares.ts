@@ -11,6 +11,8 @@ import { Modules } from "@medusajs/framework/utils"
 import cors from "cors"
 import { GetStoreBlogsSchema } from "./store/blogs/route"
 import { GetStoreBlogCategoriesSchema } from "./store/blog-categories/route"
+import path from "path"
+import fs from "fs"
 
 
 // Block login if customer's email is not verified
@@ -57,6 +59,41 @@ function corsMiddleware(origin: string) {
 
 export default defineMiddlewares({
   routes: [
+    // Static file server for uploads: maps /static/* to FILE_UPLOAD_DIR (default 'uploads')
+    {
+      matcher: "/static/:filePath*",
+      methods: ["GET"],
+      middlewares: [
+        (req: MedusaRequest, res: MedusaResponse) => {
+          try {
+            const rel = ((req as any).params?.filePath || "").toString()
+            // prevent path traversal
+            const safeRel = rel.replace(/\\\\/g, "/").replace(/\.{2,}/g, "")
+            const uploadDir = process.env.FILE_UPLOAD_DIR || "uploads"
+            const uploadDirAbs = path.isAbsolute(uploadDir)
+              ? uploadDir
+              : path.join(process.cwd(), uploadDir)
+
+            // candidate locations to check (some providers nest inside folders like 'original' or 'static')
+            const candidates = [
+              path.join(uploadDirAbs, safeRel),
+              path.join(uploadDirAbs, "original", safeRel),
+              path.join(uploadDirAbs, "static", safeRel),
+              path.join(uploadDirAbs, "uploads", safeRel),
+            ]
+
+            for (const p of candidates) {
+              if (fs.existsSync(p) && fs.statSync(p).isFile()) {
+                return res.sendFile(p)
+              }
+            }
+            return res.status(404).json({ message: "File not found" })
+          } catch (e) {
+            return res.status(500).json({ message: "Failed to serve file" })
+          }
+        },
+      ],
+    },
     // Blog Storefront Routes
     {
       matcher: "/store/blogs",

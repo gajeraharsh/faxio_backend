@@ -1,0 +1,11 @@
+{
+    "develop": {
+      "ignore": [
+        "static/**",
+        "uploads/**",
+        "public/uploads/**",
+        "dist/**"
+      ]
+    }
+  }
+  

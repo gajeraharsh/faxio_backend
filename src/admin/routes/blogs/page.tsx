@@ -67,6 +67,7 @@ const BlogsPage = () => {
     category_id: "",
     title: "",
     image_url: "" as string | null,
+    image_file: null as File | null,
     short_description: "",
     content: "",
     hashtags: [] as string[],
@@ -105,7 +106,7 @@ const BlogsPage = () => {
   useEffect(() => {
     if (!showForm) {
       setEditing(null)
-      setForm({ category_id: "", title: "", image_url: "", short_description: "", content: "", hashtags: [], tagInput: "", read_time: 0 })
+      setForm({ category_id: "", title: "", image_url: "", image_file: null, short_description: "", content: "", hashtags: [], tagInput: "", read_time: 0 })
     }
   }, [showForm])
 
@@ -121,6 +122,7 @@ const BlogsPage = () => {
       category_id: b.category_id,
       title: b.title,
       image_url: b.image_url || "",
+      image_file: null,
       short_description: b.short_description || "",
       content: b.content,
       hashtags: tags,
@@ -132,12 +134,12 @@ const BlogsPage = () => {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      setForm((f) => ({ ...f, image_url: reader.result as string }))
+    if (!file) {
+      setForm((f) => ({ ...f, image_file: null }))
+      return
     }
-    reader.readAsDataURL(file)
+    // Store the file for upload on save
+    setForm((f) => ({ ...f, image_file: file }))
   }
 
   const addTag = () => {
@@ -159,15 +161,57 @@ const BlogsPage = () => {
     }
     try {
       setSaving(true)
+      
+      let imageUrl = form.image_url
+      
+      // Upload image if a new file is selected
+      if (form.image_file) {
+        try {
+          const fd = new FormData()
+          // Medusa file module expects "files" for the multi-file endpoint
+          fd.append("files", form.image_file, form.image_file.name)
+          const base = (import.meta as any).env?.VITE_MEDUSA_ADMIN_BASE_URL || "http://localhost:9000"
+          const resp = await fetch(`${base}/admin/uploads`, {
+            method: "POST",
+            credentials: "include",
+            body: fd,
+          })
+          if (!resp.ok) {
+            const raw = await resp.text().catch(() => "")
+            let errMsg = raw
+            try { const j = JSON.parse(raw); errMsg = j?.message || raw } catch {}
+            console.error("Upload error", resp.status, raw)
+            alert(`Image upload failed (${resp.status}): ${errMsg || ""}. Blog will be saved without image.`)
+            imageUrl = null
+          }
+          const res: any = await resp.json().catch(() => null)
+          const upload = res?.uploads?.[0] || res?.files?.[0] || res?.file || (Array.isArray(res) ? res[0] : null)
+          const url = upload?.url || upload?.location || upload?.file?.url || null
+          if (url) {
+            imageUrl = url
+          } else {
+            console.error("Upload response without URL", res)
+            alert("Image upload failed: no URL in response. Blog will be saved without image.")
+            imageUrl = null
+          }
+        } catch (err: any) {
+          console.error("Upload failed", err)
+          const errMsg = err?.message || ""
+          alert(`Image upload failed. ${errMsg ? `(${errMsg}) ` : ""}Blog will be saved without image.`)
+          imageUrl = null
+        }
+      }
+      
       const payload: any = {
         category_id: form.category_id,
         title: form.title.trim(),
-        image_url: form.image_url || null,
+        image_url: imageUrl || null,
         short_description: form.short_description?.trim() || null,
         content: form.content,
         hashtags: form.hashtags,
         read_time: Number(form.read_time) || 0,
       }
+      
       if (editing) {
         await sdk.client.fetch(`/admin/blogs/${editing.id}`, { method: "PATCH", body: payload })
       } else {
@@ -386,7 +430,9 @@ const BlogsPage = () => {
               <input type="file" accept="image/*" onChange={handleImageChange} />
             </div>
             <div className="flex items-end">
-              {form.image_url ? (
+              {form.image_file ? (
+                <img src={URL.createObjectURL(form.image_file)} alt="preview" className="h-16 w-24 object-cover rounded border border-ui-border-base bg-ui-bg-base" />
+              ) : form.image_url ? (
                 <img src={form.image_url} alt="preview" className="h-16 w-24 object-cover rounded border border-ui-border-base bg-ui-bg-base" />
               ) : (
                 <div className="h-16 w-24 rounded border border-ui-border-base bg-ui-bg-subtle" />

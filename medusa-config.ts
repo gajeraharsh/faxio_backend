@@ -15,6 +15,39 @@ module.exports = defineConfig({
     }
   },
   modules: [
+    // File module (uploads): configurable provider via env
+    // Defaults to local storage; switch to S3 by setting FILE_PROVIDER=s3 and the S3 envs.
+    {
+      resolve: "@medusajs/medusa/file",
+      options: {
+        providers: [
+          ...(process.env.FILE_PROVIDER === "s3"
+            ? [
+                {
+                  resolve: "@medusajs/file-s3",
+                  id: "s3",
+                  options: {
+                    bucket: process.env.S3_BUCKET,
+                    region: process.env.S3_REGION,
+                    access_key_id: process.env.S3_ACCESS_KEY_ID,
+                    secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
+                    // Optional custom domain for CDN/fronted access
+                    // endpoint: process.env.S3_ENDPOINT, // for MinIO or custom endpoints
+                  },
+                },
+              ]
+            : [
+                {
+                  resolve: "@medusajs/file-local",
+                  id: "local",
+                  options: {
+                    upload_dir: process.env.FILE_UPLOAD_DIR || "uploads",
+                  },
+                },
+              ]),
+        ],
+      },
+    },
     {
       resolve: "./src/modules/review",
     },
