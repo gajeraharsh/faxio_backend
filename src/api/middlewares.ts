@@ -9,6 +9,8 @@ import { PostStoreRegisterSchema } from "./store/auth/register/route"
 import { PostStoreVerifyOtpSchema } from "./store/auth/verify-otp/route"
 import { Modules } from "@medusajs/framework/utils"
 import cors from "cors"
+import { GetStoreBlogsSchema } from "./store/blogs/route"
+import { GetStoreBlogCategoriesSchema } from "./store/blog-categories/route"
 
 
 // Block login if customer's email is not verified
@@ -55,6 +57,40 @@ function corsMiddleware(origin: string) {
 
 export default defineMiddlewares({
   routes: [
+    // Blog Storefront Routes
+    {
+      matcher: "/store/blogs",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetStoreBlogsSchema, {
+          isList: true,
+          defaults: [
+            "id",
+            "category_id",
+            "title",
+            "image_url",
+            "short_description",
+            "read_time",
+            "created_at",
+          ],
+        }),
+      ],
+    },
+    {
+      matcher: "/store/blogs/:id",
+      methods: ["GET"],
+      middlewares: [],
+    },
+    {
+      matcher: "/store/blog-categories",
+      methods: ["GET"],
+      middlewares: [
+        validateAndTransformQuery(GetStoreBlogCategoriesSchema, {
+          isList: true,
+          defaults: ["id", "name", "created_at"],
+        }),
+      ],
+    },
     {
       methods: ["POST"],
       matcher: "/store/auth/register",
@@ -90,6 +126,7 @@ export default defineMiddlewares({
             "title",
             "first_name",
             "last_name",
+      
             "content",
             "created_at",
           ],
