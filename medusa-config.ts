@@ -21,30 +21,19 @@ module.exports = defineConfig({
       resolve: "@medusajs/medusa/file",
       options: {
         providers: [
-          ...(process.env.FILE_PROVIDER === "s3"
-            ? [
                 {
                   resolve: "@medusajs/file-s3",
                   id: "s3",
                   options: {
-                    bucket: process.env.S3_BUCKET,
-                    region: process.env.S3_REGION,
+                    file_url: process.env.S3_URL,
                     access_key_id: process.env.S3_ACCESS_KEY_ID,
                     secret_access_key: process.env.S3_SECRET_ACCESS_KEY,
-                    // Optional custom domain for CDN/fronted access
-                    // endpoint: process.env.S3_ENDPOINT, // for MinIO or custom endpoints
+                    region: process.env.S3_REGION,
+                    bucket: process.env.S3_BUCKET,
+                    endpoint:"https://s3.ap-south-1.amazonaws.com",
+                    prefix:process.env.S3_PREFIX
                   },
                 },
-              ]
-            : [
-                {
-                  resolve: "@medusajs/file-local",
-                  id: "local",
-                  options: {
-                    upload_dir: process.env.FILE_UPLOAD_DIR || "uploads",
-                  },
-                },
-              ]),
         ],
       },
     },
