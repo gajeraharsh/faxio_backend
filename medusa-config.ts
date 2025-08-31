@@ -44,6 +44,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/blog",
     },
     {
+      resolve: "./src/modules/reels",
+    },
+    {
       resolve: "./src/modules/wishlist",
     },
     {
