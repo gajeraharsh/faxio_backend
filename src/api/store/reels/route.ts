@@ -54,6 +54,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     const result = await (service.listReels ? service.listReels(filters, config) : service.listReelsWithFilters(filters, order))
     let reels = Array.isArray(result) ? result.filter(Boolean) : (result?.data || []).filter(Boolean)
     const meta = Array.isArray(result) ? {} : (result?.metadata || {})
+
+    // Compute accurate total count
+    let totalCount: number | undefined = typeof meta.count === "number" ? meta.count : undefined
+    if (typeof totalCount !== "number") {
+      try {
+        if (typeof service.countReels === "function") {
+          totalCount = await service.countReels(filters)
+        } else if (typeof service.listAndCountReels === "function") {
+          const [, cnt] = await service.listAndCountReels(filters, config)
+          totalCount = typeof cnt === "number" ? cnt : undefined
+        }
+      } catch {
+        // swallow and fallback below
+      }
+    }
+
     // Defensive post-filter to guarantee correctness (normalize strings)
     if (type) {
       const wantType = String(type).trim().toLowerCase()
@@ -89,7 +105,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       reels = reels.map((r: any) => ({ ...toPlain(r), is_like: false, like_count: countsMap?.get?.(r.id) ?? 0 }))
     }
 
-    const count = typeof meta.count === "number" ? meta.count : reels.length
+    const count = typeof totalCount === "number" ? totalCount : (typeof meta.count === "number" ? meta.count : reels.length)
     const take = typeof meta.take === "number" ? meta.take : limit
     const skip = typeof meta.skip === "number" ? meta.skip : offset
     res.json({ reels, count, limit: take, offset: skip })
