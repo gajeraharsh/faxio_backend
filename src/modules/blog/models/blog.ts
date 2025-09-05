@@ -11,7 +11,7 @@ const Blog = model.define("blog", {
   image_url: model.text().nullable(),
   short_description: model.text().nullable(),
   content: model.text(),
-  hashtags: model.json<{ tags: string[] } | string[] | null>().nullable(),
+  hashtags: model.json().nullable(),
   read_time: model.number().nullable(),
 })
 
