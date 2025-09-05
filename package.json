@@ -15,6 +15,8 @@
   "scripts": {
     "build": "medusa build",
     "seed": "medusa exec ./src/scripts/seed.ts",
+    "seed:blogs": "medusa exec ./src/scripts/seed-blogs.js",
+    "seed:reels": "medusa exec ./src/scripts/seed-reels.ts",
     "start": "medusa start",
     "dev": "medusa develop",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
@@ -24,6 +26,7 @@
   "dependencies": {
     "@medusajs/admin-sdk": "2.8.8",
     "@medusajs/cli": "2.8.8",
+    "@medusajs/file-s3": "^2.10.1",
     "@medusajs/framework": "2.8.8",
     "@medusajs/medusa": "2.8.8",
     "@mikro-orm/core": "6.4.3",
@@ -31,13 +34,17 @@
     "@mikro-orm/migrations": "6.4.3",
     "@mikro-orm/postgresql": "6.4.3",
     "awilix": "^8.0.1",
-    "pg": "^8.13.0"
+    "cors": "^2.8.5",
+    "nodemailer": "^6.9.15",
+    "pg": "^8.16.3",
+    "react-quill": "^2.0.0"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.8.8",
     "@mikro-orm/cli": "6.4.3",
     "@swc/core": "1.5.7",
     "@swc/jest": "^0.2.36",
+    "@types/cors": "^2.8.19",
     "@types/jest": "^29.5.13",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.2",

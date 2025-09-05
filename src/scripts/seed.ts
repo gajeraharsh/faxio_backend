@@ -19,6 +19,7 @@ import {
   linkSalesChannelsToStockLocationWorkflow,
   updateStoresWorkflow,
 } from "@medusajs/medusa/core-flows";
+// Reviews are seeded via a dedicated script (src/scripts/seed-reviews.ts)
 
 export default async function seedDemoData({ container }: ExecArgs) {
   const logger = container.resolve(ContainerRegistrationKeys.LOGGER);
@@ -829,7 +830,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
       ],
     },
   });
-  logger.info("Finished seeding product data.");
+  logger.info("Finished creating products.");
 
   logger.info("Seeding inventory levels.");
 
