@@ -76,7 +76,13 @@ module.exports = defineConfig({
           },
         ],
       },
+    },  
+  ],
+  plugins: [
+    {
+      resolve: 'medusa-variant-images',
+      options: {},
     },
-
-  ]
+  ],
+  
 })
