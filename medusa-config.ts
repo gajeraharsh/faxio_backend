@@ -81,9 +81,26 @@ module.exports = defineConfig({
               display_name: "Cash on Delivery",
             },
           },
+          {
+            resolve: "./src/modules/razorpay",
+            id: "razorpay",
+            options: {
+              key_id: process.env.RAZORPAY_KEY_ID,
+              key_secret: process.env.RAZORPAY_KEY_SECRET,
+              webhook_secret: process.env.RAZORPAY_WEBHOOK_SECRET,
+              auto_capture: true,
+              display_name: "Razorpay",
+            },
+          },
         ],
       },
+    },  
+  ],
+  plugins: [
+    {
+      resolve: 'medusa-variant-images',
+      options: {},
     },
-
-  ]
+  ],
+  
 })
