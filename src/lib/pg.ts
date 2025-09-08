@@ -14,7 +14,11 @@ export function getPool(): Pool {
         "DATABASE_URL is not set. Please set it in your environment to use external Postgres connection."
       )
     }
-    _pool = new Pool({ connectionString, max: 5 })
+    _pool = new Pool({ connectionString, max: 5,
+      ssl:{
+        rejectUnauthorized:false
+      }
+     })
   }
   return _pool
 }
