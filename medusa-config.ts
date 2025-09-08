@@ -5,6 +5,13 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    databaseDriverOptions:{
+      connection:{
+        ssl:{
+          rejectUnauthorized:false,
+        }
+      }
+    },
     http: {
       // Ensure CORS for all surfaces during local dev
       storeCors: process.env.STORE_CORS || "http://localhost:3000",
