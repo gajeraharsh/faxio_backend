@@ -123,7 +123,7 @@ const ReelsPage = () => {
     try {
       const fd = new FormData()
       fd.append("files", file, file.name)
-      const base = (import.meta as any).env?.VITE_MEDUSA_ADMIN_BASE_URL || "http://localhost:9000"
+      const base = (import.meta as any).env?.VITE_MEDUSA_ADMIN_BASE_URL || "https://api.faxio.in"
       const resp = await fetch(`${base}/admin/uploads`, { method: "POST", credentials: "include", body: fd })
       if (!resp.ok) {
         const raw = await resp.text().catch(() => "")

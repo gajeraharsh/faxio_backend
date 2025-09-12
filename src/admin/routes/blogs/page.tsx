@@ -170,7 +170,7 @@ const BlogsPage = () => {
           const fd = new FormData()
           // Medusa file module expects "files" for the multi-file endpoint
           fd.append("files", form.image_file, form.image_file.name)
-          const base = (import.meta as any).env?.VITE_MEDUSA_ADMIN_BASE_URL || "http://localhost:9000"
+          const base = (import.meta as any).env?.VITE_MEDUSA_ADMIN_BASE_URL || "https://api.faxio.in"
           const resp = await fetch(`${base}/admin/uploads`, {
             method: "POST",
             credentials: "include",
