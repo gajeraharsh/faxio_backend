@@ -5,11 +5,11 @@ loadEnv(process.env.NODE_ENV || 'development', process.cwd())
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
-    cookieOptions:{
-      secure: true,
-      httpOnly: true,
-      sameSite: "none",
-    },
+    // cookieOptions:{
+    //   secure: true,
+    //   httpOnly: true,
+    //   sameSite: "none",
+    // },
     databaseDriverOptions:{
       connection:{
         ssl:{
@@ -60,6 +60,12 @@ module.exports = defineConfig({
     },
     {
       resolve: "./src/modules/wishlist",
+    },
+    {
+      resolve: "./src/modules/newsletter",
+    },
+    {
+      resolve: "./src/modules/contact",
     },
     {
       resolve: "./src/modules/verification",

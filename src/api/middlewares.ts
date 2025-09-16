@@ -11,6 +11,7 @@ import { Modules } from "@medusajs/framework/utils"
 import cors from "cors"
 import { GetStoreBlogsSchema } from "./store/blogs/route"
 import { GetStoreBlogCategoriesSchema } from "./store/blog-categories/route"
+import { PostStoreNewsletterSchema } from "./store/newsletter/route"
 import path from "path"
 import fs from "fs"
 
@@ -92,6 +93,11 @@ export default defineMiddlewares({
           defaults: ["id", "name", "created_at"],
         }),
       ],
+    },
+    {
+      methods: ["POST"],
+      matcher: "/store/newsletter",
+      middlewares: [validateAndTransformBody(PostStoreNewsletterSchema)],
     },
     {
       methods: ["POST"],
