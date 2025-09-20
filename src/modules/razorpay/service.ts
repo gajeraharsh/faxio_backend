@@ -1,4 +1,4 @@
-import { AbstractPaymentProvider, BigNumber } from "@medusajs/framework/utils"
+import { AbstractPaymentProvider, BigNumber, Modules } from "@medusajs/framework/utils"
 import type {
   AuthorizePaymentInput,
   AuthorizePaymentOutput,
@@ -290,11 +290,65 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
       const razorpayOrderId = body?.payload?.payment?.entity?.order_id || body?.payload?.order?.entity?.id
       const amount = body?.payload?.payment?.entity?.amount || 0
 
+      // Resolve the Medusa Payment module and try to find the real payment session id
+      // by matching the stored session.data.order_id === razorpayOrderId (set in initiatePayment)
+      let sessionId: string | undefined
+      try {
+        const paymentModule: any = (this as any)?.container?.resolve?.(Modules.PAYMENT)
+        if (paymentModule) {
+          // Attempt 1: listPaymentSessions with a selector (supported in recent versions)
+          if (typeof paymentModule.listPaymentSessions === 'function') {
+            try {
+              const res = await paymentModule.listPaymentSessions({
+                provider_id: RazorpayProviderService.identifier,
+                // Some implementations allow nested filters using dot notation
+                "data.order_id": razorpayOrderId,
+                limit: 5,
+              })
+              const sessions = Array.isArray(res?.payment_sessions)
+                ? res.payment_sessions
+                : Array.isArray(res)
+                  ? res
+                  : []
+              const found = sessions.find((s: any) => s?.data?.order_id === razorpayOrderId)
+              sessionId = found?.id || sessionId
+            } catch (_) {
+              // ignore and try next strategy
+            }
+          }
+
+          // Attempt 2: if there is a generic list method
+          if (!sessionId && typeof paymentModule.list === 'function') {
+            try {
+              const res = await paymentModule.list({
+                entity: 'payment_session',
+                provider_id: RazorpayProviderService.identifier,
+                "data.order_id": razorpayOrderId,
+                limit: 5,
+              })
+              const sessions = Array.isArray(res) ? res : []
+              const found = sessions.find((s: any) => s?.data?.order_id === razorpayOrderId)
+              sessionId = found?.id || sessionId
+            } catch (_) { }
+          }
+
+          // Attempt 3: brute-force fallback if we only have retrieve and we suspect orderId might already be session id
+          if (!sessionId && typeof paymentModule.retrievePaymentSession === 'function') {
+            try {
+              const maybe = await paymentModule.retrievePaymentSession(razorpayOrderId)
+              if (maybe?.id) sessionId = maybe.id
+            } catch (_) { }
+          }
+        }
+      } catch (_) {
+        // Soft failure: leave sessionId undefined; Medusa will ignore if we can't map
+      }
+
       if (event === "payment.authorized") {
         return {
           action: "authorized",
           data: {
-            session_id: razorpayOrderId || "",
+            session_id: sessionId || razorpayOrderId || "",
             amount: new BigNumber(amount),
           },
         }
@@ -304,7 +358,7 @@ class RazorpayProviderService extends AbstractPaymentProvider<RazorpayOptions> {
         return {
           action: "captured",
           data: {
-            session_id: razorpayOrderId || "",
+            session_id: sessionId || razorpayOrderId || "",
             amount: new BigNumber(amount),
           },
         }
