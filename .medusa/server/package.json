@@ -17,7 +17,6 @@
     "seed": "medusa exec ./src/scripts/seed.ts",
     "seed:blogs": "medusa exec ./src/scripts/seed-blogs.js",
     "seed:reels": "medusa exec ./src/scripts/seed-reels.ts",
-    "seed:reels:assign-product": "medusa exec ./src/scripts/assign-reels-product.ts",
     "start": "medusa start",
     "dev": "medusa develop",
     "test:integration:http": "TEST_TYPE=integration:http NODE_OPTIONS=--experimental-vm-modules jest --silent=false --runInBand --forceExit",
