@@ -68,6 +68,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/contact",
     },
     {
+      resolve: "./src/modules/banner",
+    },
+    {
       resolve: "./src/modules/verification",
     },
     {
