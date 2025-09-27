@@ -11,6 +11,7 @@ export default defineAppConfig({
           { label: "Blogs", to: "/blogs", icon: DocumentText },
           { label: "Reels", to: "/reels", icon: ChatBubbleLeftRight },
           { label: "Contacts", to: "/contacts", icon: ChatBubbleLeftRight },
+          { label: "Banners", to: "/banners", icon: DocumentText },
         ],
       },
     ],
